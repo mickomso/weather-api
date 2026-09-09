@@ -3,8 +3,17 @@ from unittest.mock import patch
 import httpx2
 import pytest
 
-from src.core.config import OPENWEATHER_URL, WEATHER_LANGUAGE, WEATHER_UNITS
-from src.services.exceptions import WeatherServiceUnavailableError
+from src.core.config import (
+    OPENWEATHER_URL,
+    WEATHER_LANGUAGE,
+    WEATHER_REQUEST_TIMEOUT,
+    WEATHER_UNITS,
+)
+from src.services import weather_service
+from src.services.exceptions import (
+    WeatherConfigurationError,
+    WeatherServiceUnavailableError,
+)
 from src.services.weather_service import get_weather_for_city
 
 
@@ -60,6 +69,7 @@ class TestGetWeatherService:
         assert kwargs["params"]["units"] == WEATHER_UNITS
         assert kwargs["params"]["lang"] == WEATHER_LANGUAGE
         assert kwargs["params"]["appid"]
+        assert kwargs["timeout"] == WEATHER_REQUEST_TIMEOUT
 
     def test_get_weather_for_invalid_city_returns_none(
         self, mock_http_get, city_not_found_response
@@ -90,6 +100,27 @@ class TestGetWeatherService:
 
     def test_get_weather_for_city_raises_when_provider_times_out(self, mock_http_get):
         mock_http_get.side_effect = httpx2.TimeoutException("Request timed out")
+
+        with pytest.raises(WeatherServiceUnavailableError):
+            get_weather_for_city("Valencia")
+
+    def test_get_weather_for_city_raises_when_configuration_is_incomplete(self):
+        with (
+            patch.object(weather_service, "OPENWEATHER_API_KEY", None),
+            pytest.raises(WeatherConfigurationError),
+        ):
+            get_weather_for_city("Valencia")
+
+    def test_get_weather_for_city_raises_when_provider_returns_server_error(
+        self, mock_http_get
+    ):
+        mock_http_get.return_value.json.return_value = {
+            "cod": 500,
+            "message": "internal error",
+        }
+        mock_http_get.return_value.raise_for_status.side_effect = httpx2.HTTPError(
+            "Server error"
+        )
 
         with pytest.raises(WeatherServiceUnavailableError):
             get_weather_for_city("Valencia")
