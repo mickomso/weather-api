@@ -4,7 +4,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from src.services.exceptions import WeatherServiceUnavailableError
+from src.services.exceptions import (
+    WeatherConfigurationError,
+    WeatherServiceUnavailableError,
+)
 
 
 class TestGetWeather:
@@ -17,7 +20,18 @@ class TestGetWeather:
         ) as mock_get_weather:
             yield mock_get_weather
 
-    def test_get_weather_for_valid_city_returns_weather_data(self):
+    @pytest.fixture
+    def valid_weather_data(self):
+        return {
+            "city": "Valencia",
+            "temperature": 25.0,
+            "description": "cielo claro",
+        }
+
+    def test_get_weather_for_valid_city_returns_weather_data(
+        self, mock_get_weather, valid_weather_data
+    ):
+        mock_get_weather.return_value = valid_weather_data
         response = self.client.get("/api/v1/weather?city=Valencia")
         assert response.status_code == 200
         assert "city" in response.json()
@@ -25,18 +39,29 @@ class TestGetWeather:
         assert "description" in response.json()
         assert response.json()["city"] == "Valencia"
 
-    def test_get_weather_passes_city_to_weather_service(self, mock_get_weather):
-        mock_get_weather.return_value = {
-            "city": "Valencia",
-            "temperature": 25.0,
-            "description": "Sunny",
-        }
+    def test_get_weather_response_matches_weather_schema(
+        self, mock_get_weather, valid_weather_data
+    ):
+        mock_get_weather.return_value = valid_weather_data
+
+        response = self.client.get("/api/v1/weather?city=Valencia")
+
+        assert response.json() == valid_weather_data
+
+    def test_get_weather_passes_city_to_weather_service(
+        self, mock_get_weather, valid_weather_data
+    ):
+        mock_get_weather.return_value = valid_weather_data
         response = self.client.get("/api/v1/weather?city=Valencia")
         assert response.status_code == 200
         mock_get_weather.assert_called_once_with("Valencia")
 
     def test_get_weather_without_city_returns_422(self):
         response = self.client.get("/api/v1/weather")
+        assert response.status_code == 422
+
+    def test_get_weather_with_blank_city_returns_422(self):
+        response = self.client.get("/api/v1/weather?city=")
         assert response.status_code == 422
 
     def test_get_weather_for_invalid_city_returns_404(self, mock_get_weather):
@@ -52,3 +77,13 @@ class TestGetWeather:
         response = self.client.get("/api/v1/weather?city=Valencia")
         assert response.status_code == 502
         assert response.json() == {"detail": "Weather service unavailable"}
+
+    def test_get_weather_returns_500_when_weather_service_is_misconfigured(
+        self, mock_get_weather
+    ):
+        mock_get_weather.side_effect = WeatherConfigurationError
+
+        response = self.client.get("/api/v1/weather?city=Valencia")
+
+        assert response.status_code == 500
+        assert response.json() == {"detail": "Weather service misconfigured"}

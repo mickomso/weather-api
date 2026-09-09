@@ -1,15 +1,21 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
-from src.services.exceptions import WeatherServiceUnavailableError
+from src.schemas.weather import WeatherResponse
+from src.services.exceptions import (
+    WeatherConfigurationError,
+    WeatherServiceUnavailableError,
+)
 from src.services.weather_service import get_weather_for_city
 
 router = APIRouter()
 
 
-@router.get("/weather")
-def get_weather(city: str):
+@router.get("/weather", response_model=WeatherResponse)
+def get_weather(city: str = Query(min_length=1)):
     try:
         weather = get_weather_for_city(city)
+    except WeatherConfigurationError:
+        raise HTTPException(status_code=500, detail="Weather service misconfigured")
     except WeatherServiceUnavailableError:
         raise HTTPException(status_code=502, detail="Weather service unavailable")
 
