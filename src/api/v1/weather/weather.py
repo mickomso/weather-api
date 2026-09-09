@@ -9,7 +9,7 @@ router = APIRouter()
 def get_weather(city: str):
     try:
         weather = get_weather_for_city(city)
-    except Exception:
+    except Exception:  # noqa: BLE001
         raise HTTPException(status_code=502, detail="Weather service unavailable")
 
     if weather is None:
