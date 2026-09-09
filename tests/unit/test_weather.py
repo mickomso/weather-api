@@ -41,3 +41,12 @@ class TestWeather:
             response = self.client.get("/api/v1/weather?city=InvalidCity")
             assert response.status_code == 404
             assert response.json() == {"detail": "City not found"}
+
+    def test_get_weather_returns_502_when_weather_service_is_unavailable(self):
+        with patch(
+            "src.api.v1.weather.weather.get_weather_for_city"
+        ) as mock_get_weather:
+            mock_get_weather.side_effect = Exception("Service unavailable")
+            response = self.client.get("/api/v1/weather?city=Valencia")
+            assert response.status_code == 502
+            assert response.json() == {"detail": "Weather service unavailable"}
