@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.api.health import router as health_router
-from src.api.v1.weather.weather import router as weather_router
+from app.api.v1.weather.weather import router as weather_router
 
 app = FastAPI()
 

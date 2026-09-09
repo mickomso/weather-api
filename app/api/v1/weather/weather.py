@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException, Query
 
-from src.schemas.weather import WeatherResponse
-from src.services.exceptions import (
+from app.schemas.weather import WeatherResponse
+from app.services.exceptions import (
     WeatherConfigurationError,
     WeatherServiceUnavailableError,
 )
-from src.services.weather_service import get_weather_for_city
+from app.services.weather_service import get_weather_for_city
 
 router = APIRouter()
 
