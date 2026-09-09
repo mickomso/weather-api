@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from src.services.exceptions import WeatherServiceUnavailableError
 
 
 class TestGetWeather:
@@ -47,7 +48,7 @@ class TestGetWeather:
     def test_get_weather_returns_502_when_weather_service_is_unavailable(
         self, mock_get_weather
     ):
-        mock_get_weather.side_effect = Exception("Service unavailable")
+        mock_get_weather.side_effect = WeatherServiceUnavailableError
         response = self.client.get("/api/v1/weather?city=Valencia")
         assert response.status_code == 502
         assert response.json() == {"detail": "Weather service unavailable"}
