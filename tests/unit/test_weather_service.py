@@ -9,50 +9,87 @@ from src.services.weather_service import get_weather_for_city
 
 
 class TestGetWeatherService:
-    def test_get_weather_for_valid_city_returns_weather_data(self):
+    @pytest.fixture
+    def mock_http_get(self):
         with patch("src.services.weather_service.httpx2.get") as mock_get:
-            mock_get.return_value.json.return_value = {
-                "name": "Valencia",
-                "main": {
-                    "temp": 25.0,
-                },
-                "weather": [
-                    {
-                        "description": "cielo claro",
-                    }
-                ],
-            }
+            yield mock_get
 
-            weather = get_weather_for_city("Valencia")
+    @pytest.fixture
+    def valid_weather_response(self):
+        return {
+            "name": "Valencia",
+            "main": {"temp": 25.0},
+            "weather": [{"description": "cielo claro"}],
+        }
 
-        assert weather == {
+    @pytest.fixture
+    def city_not_found_response(self):
+        return {
+            "cod": "404",
+            "message": "city not found",
+        }
+
+    @pytest.fixture
+    def valid_weather_data(self):
+        return {
             "city": "Valencia",
             "temperature": 25.0,
             "description": "cielo claro",
         }
 
-        mock_get.assert_called_once()
-        args, kwargs = mock_get.call_args
+    def test_get_weather_for_valid_city_returns_weather_data(
+        self, mock_http_get, valid_weather_response, valid_weather_data
+    ):
+        mock_http_get.return_value.json.return_value = valid_weather_response
+
+        weather = get_weather_for_city("Valencia")
+
+        assert weather == valid_weather_data
+
+    def test_get_weather_for_city_sends_expected_request(
+        self, mock_http_get, valid_weather_response
+    ):
+        mock_http_get.return_value.json.return_value = valid_weather_response
+
+        get_weather_for_city("Valencia")
+
+        mock_http_get.assert_called_once()
+        args, kwargs = mock_http_get.call_args
         assert args[0] == OPENWEATHER_URL
         assert kwargs["params"]["q"] == "Valencia"
         assert kwargs["params"]["units"] == WEATHER_UNITS
         assert kwargs["params"]["lang"] == WEATHER_LANGUAGE
-        assert "appid" in kwargs["params"]
+        assert kwargs["params"]["appid"]
 
-    def test_get_weather_for_invalid_city_returns_none(self):
-        with patch("src.services.weather_service.httpx2.get") as mock_get:
-            mock_get.return_value.json.return_value = {
-                "cod": "404",
-                "message": "city not found",
-            }
+    def test_get_weather_for_invalid_city_returns_none(
+        self, mock_http_get, city_not_found_response
+    ):
+        mock_http_get.return_value.json.return_value = city_not_found_response
 
-            weather = get_weather_for_city("InvalidCity")
+        weather = get_weather_for_city("InvalidCity")
 
         assert weather is None
 
-    def test_get_weather_for_city_raises_when_provider_is_unavailable(self):
-        with patch("src.services.weather_service.httpx2.get") as mock_get:
-            mock_get.side_effect = httpx2.HTTPError("Service unavailable")
+    def test_get_weather_for_city_accepts_numeric_not_found_code(self, mock_http_get):
+        mock_http_get.return_value.json.return_value = {
+            "cod": 404,
+            "message": "city not found",
+        }
 
-            with pytest.raises(WeatherServiceUnavailableError):
-                get_weather_for_city("Valencia")
+        weather = get_weather_for_city("InvalidCity")
+
+        assert weather is None
+
+    def test_get_weather_for_city_raises_when_provider_is_unavailable(
+        self, mock_http_get
+    ):
+        mock_http_get.side_effect = httpx2.HTTPError("Service unavailable")
+
+        with pytest.raises(WeatherServiceUnavailableError):
+            get_weather_for_city("Valencia")
+
+    def test_get_weather_for_city_raises_when_provider_times_out(self, mock_http_get):
+        mock_http_get.side_effect = httpx2.TimeoutException("Request timed out")
+
+        with pytest.raises(WeatherServiceUnavailableError):
+            get_weather_for_city("Valencia")
