@@ -109,25 +109,6 @@ uv run ruff format --check .
 
 All 17 tests should pass and Ruff should report zero issues.
 
-## Project Structure
-
-```
-weather-py/
-├── app/
-│   └── main.py              # FastAPI application factory
-├── src/
-│   ├── api/v1/weather/      # Weather endpoint
-│   ├── core/config.py       # Settings loaded from .env
-│   ├── schemas/weather.py   # Pydantic response model
-│   └── services/
-│       ├── weather_service.py  # Business logic + HTTP client
-│       └── exceptions.py       # Custom exceptions
-├── tests/unit/              # Pytest suite (17 tests)
-├── .env.example             # Documented env vars
-├── pyproject.toml           # Project config (deps, Ruff, pytest)
-└── README.md
-```
-
 ## License
 
 MIT
