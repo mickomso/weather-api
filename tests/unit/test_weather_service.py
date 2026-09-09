@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from src.core.config import OPENWEATHER_URL, WEATHER_LANGUAGE, WEATHER_UNITS
 from src.services.weather_service import get_weather_for_city
 
 
@@ -25,3 +26,11 @@ class TestGetWeatherService:
             "temperature": 25.0,
             "description": "cielo claro",
         }
+
+        mock_get.assert_called_once()
+        args, kwargs = mock_get.call_args
+        assert args[0] == OPENWEATHER_URL
+        assert kwargs["params"]["q"] == "Valencia"
+        assert kwargs["params"]["units"] == WEATHER_UNITS
+        assert kwargs["params"]["lang"] == WEATHER_LANGUAGE
+        assert "appid" in kwargs["params"]
