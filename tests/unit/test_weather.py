@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from src.services.exceptions import (
+from app.services.exceptions import (
     WeatherConfigurationError,
     WeatherServiceUnavailableError,
 )
@@ -16,7 +16,7 @@ class TestGetWeather:
     @pytest.fixture
     def mock_get_weather(self):
         with patch(
-            "src.api.v1.weather.weather.get_weather_for_city"
+            "app.api.v1.weather.weather.get_weather_for_city"
         ) as mock_get_weather:
             yield mock_get_weather
 

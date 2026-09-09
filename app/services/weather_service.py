@@ -1,13 +1,13 @@
 import httpx2
 
-from src.core.config import (
+from app.core.config import (
     OPENWEATHER_API_KEY,
     OPENWEATHER_URL,
     WEATHER_LANGUAGE,
     WEATHER_REQUEST_TIMEOUT,
     WEATHER_UNITS,
 )
-from src.services.exceptions import (
+from app.services.exceptions import (
     WeatherConfigurationError,
     WeatherServiceUnavailableError,
 )

@@ -3,24 +3,24 @@ from unittest.mock import patch
 import httpx2
 import pytest
 
-from src.core.config import (
+from app.core.config import (
     OPENWEATHER_URL,
     WEATHER_LANGUAGE,
     WEATHER_REQUEST_TIMEOUT,
     WEATHER_UNITS,
 )
-from src.services import weather_service
-from src.services.exceptions import (
+from app.services import weather_service
+from app.services.exceptions import (
     WeatherConfigurationError,
     WeatherServiceUnavailableError,
 )
-from src.services.weather_service import get_weather_for_city
+from app.services.weather_service import get_weather_for_city
 
 
 class TestGetWeatherService:
     @pytest.fixture
     def mock_http_get(self):
-        with patch("src.services.weather_service.httpx2.get") as mock_get:
+        with patch("app.services.weather_service.httpx2.get") as mock_get:
             yield mock_get
 
     @pytest.fixture
