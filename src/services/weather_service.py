@@ -6,6 +6,7 @@ from src.core.config import (
     WEATHER_LANGUAGE,
     WEATHER_UNITS,
 )
+from src.services.exceptions import WeatherServiceUnavailableError
 
 
 def get_weather_for_city(city: str):
@@ -15,8 +16,15 @@ def get_weather_for_city(city: str):
         "units": WEATHER_UNITS,
         "lang": WEATHER_LANGUAGE,
     }
-    response = httpx2.get(OPENWEATHER_URL, params=params)
+    try:
+        response = httpx2.get(OPENWEATHER_URL, params=params)
+    except httpx2.HTTPError as error:
+        raise WeatherServiceUnavailableError from error
+
     weather_data = response.json()
+
+    if str(weather_data.get("cod")) == "404":
+        return None
 
     return {
         "city": weather_data["name"],
