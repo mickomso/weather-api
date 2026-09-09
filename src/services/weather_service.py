@@ -1,20 +1,25 @@
-import os
-
 import httpx2
-from dotenv import load_dotenv
 
-load_dotenv()
-OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
+from src.core.config import (
+    OPENWEATHER_API_KEY,
+    OPENWEATHER_URL,
+    WEATHER_LANGUAGE,
+    WEATHER_UNITS,
+)
 
 
 def get_weather_for_city(city: str):
-    request = httpx2.get(
-        f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHER_API_KEY}&units=metric&lang=es"
-    )
-    response = request.json()
+    params = {
+        "q": city,
+        "appid": OPENWEATHER_API_KEY,
+        "units": WEATHER_UNITS,
+        "lang": WEATHER_LANGUAGE,
+    }
+    response = httpx2.get(OPENWEATHER_URL, params=params)
+    weather_data = response.json()
 
     return {
-        "city": response["name"],
-        "temperature": response["main"]["temp"],
-        "description": response["weather"][0]["description"],
+        "city": weather_data["name"],
+        "temperature": weather_data["main"]["temp"],
+        "description": weather_data["weather"][0]["description"],
     }
